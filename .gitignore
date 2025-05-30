@@ -1,0 +1,7 @@
+out/
+.vs/
+.idea/
+.vscode/
+vc140.idb
+vc140.pdb
+wasm/
