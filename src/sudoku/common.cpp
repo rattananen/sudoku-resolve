@@ -1,5 +1,6 @@
 ﻿#include "common.hpp"
 #include "text.hpp"
+#include <algorithm>
 #include <iomanip>
 
 namespace jkk::sudoku {
@@ -88,11 +89,60 @@ namespace jkk::sudoku {
 		os << sep_thick << "\n" << line << "\n";
 		return os;
 	}
-	Grid_row_view::Grid_row_view(Grid& gd, size_t pos) :m_gd{ gd }, m_pos{pos}
+
+	int32_t& Grid::operator[](size_t n)
 	{
+		return data[n];
 	}
 
-	int32_t& Grid_row_view::operator[](size_t n) {
-		return m_gd.data[m_pos * 9 + n];
+	int32_t& Grid::Element::operator[](size_t n)
+	{
+		return data[n];
+	}
+
+	
+	constexpr size_t Grid_validator::index_for(int32_t n)
+	{
+		return static_cast<size_t>(n) - 1;
+	}
+
+	Grid_validator::Result::operator bool() const {
+		for (auto v : data) {
+			if (v == 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool& Grid_validator::Result::operator[](size_t i) {
+
+		return data[i];
+	}
+
+	void Grid_validator::Result::fill(bool v)
+	{
+		std::fill(data.begin(), data.end(), v);
+	}
+	
+	void Grid_validator::validate(Grid_validator::Result& out, Grid::Element& elm) {
+		
+		out.fill(true);
+		lookup.fill(false);
+		
+		for (size_t pos = 0; pos != 9; ++pos) {
+			auto v = elm[pos];
+			if (v == 0) {
+				out[pos] = false;
+				continue;
+			}
+			auto index = Grid_validator::index_for(v);
+			if (lookup[index]) {
+				out[pos] = false;
+			}
+			else {
+				lookup[index] = true;
+			}
+		}
 	}
 }

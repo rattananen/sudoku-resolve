@@ -26,10 +26,21 @@ int main() {
 
 	std::cout << tb << "\n";
 
-	for (int i = 0;i < 9; ++i) {
-		jkk::sudoku::Grid_row_view row(tb, i);
+	
+	jkk::sudoku::Grid_validator vd{};
+	jkk::sudoku::Grid_validator::Result res{};
 
+	//vd.test<jkk::sudoku::Grid_view_type::region>();
+	vd.validate_row(res, tb, 0);
+
+	if (res) {
+		std::cout << "no error\n";
 	}
+	else {
+		std::cout << "error\n";
+	}
+
+	
 
 	return 0;
 }
