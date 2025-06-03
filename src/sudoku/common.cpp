@@ -2,6 +2,7 @@
 #include "text.hpp"
 #include <algorithm>
 #include <iomanip>
+#include <bitset>
 
 namespace jkk::sudoku {
 
@@ -71,7 +72,8 @@ namespace jkk::sudoku {
 				os << ' ';
 			}
 			else {
-				os << t.data[n];
+				os << static_cast<int>(t.data[n]);
+				//os << n;
 			}
 
 			if (pos % 9 != 0) {
@@ -90,58 +92,60 @@ namespace jkk::sudoku {
 		return os;
 	}
 
-	int32_t& Grid::operator[](size_t n)
+	std::ostream& operator<<(std::ostream& os, View& v)
+	{
+		for (auto it : v) {
+			os << it << "\n";
+		}
+		return os;
+	}
+
+	std::ostream& operator<<(std::ostream& os, Sub_view& v)
+	{
+		for (auto it:v) {
+			os << static_cast<int>(it) << " ";
+		}
+		return os;
+	}
+
+	std::ostream& operator<<(std::ostream& os, Marker m)
+	{
+		return os << std::bitset<9>(m.data);
+	}
+
+	Grid::value_type& Grid::operator[](size_t n)
 	{
 		return data[n];
 	}
 
-	int32_t& Grid::Element::operator[](size_t n)
+	Grid_span::value_type& Grid_span::operator[](size_t n)
 	{
 		return data[n];
 	}
 
 	
-	constexpr size_t Grid_validator::index_for(int32_t n)
+	constexpr size_t index_for(Grid::value_type n)
 	{
 		return static_cast<size_t>(n) - 1;
 	}
 
-	Grid_validator::Result::operator bool() const {
-		for (auto v : data) {
-			if (v == 0) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	bool& Grid_validator::Result::operator[](size_t i) {
-
-		return data[i];
-	}
-
-	void Grid_validator::Result::fill(bool v)
-	{
-		std::fill(data.begin(), data.end(), v);
-	}
-	
-	void Grid_validator::validate(Grid_validator::Result& out, Grid::Element& elm) {
+	void Validator::validate(Marker& out, Sub_view sub) {
 		
-		out.fill(true);
-		lookup.fill(false);
+		out.data = -1u;
+		lookup.data = 0;
 		
 		for (size_t pos = 0; pos != 9; ++pos) {
-			auto v = elm[pos];
+			auto v = sub[pos];
 			if (v == 0) {
-				out[pos] = false;
+				out.set(pos, false);
 				continue;
 			}
-			auto index = Grid_validator::index_for(v);
-			if (lookup[index]) {
-				out[pos] = false;
+			auto index = index_for(v);
+			if (lookup.get(index)) {
+				out.set(pos, false);
 			}
 			else {
-				lookup[index] = true;
+				lookup.set(index, true);
 			}
 		}
 	}

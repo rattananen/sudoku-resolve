@@ -14,7 +14,7 @@ int main() {
 
 	jkk::sudoku::Grid tb{
 		{
-	    5,3,4,6,7,8,9,1,2,
+	    5,3,4,6,7,8,9,1,1,
 		6,7,2,1,9,5,3,4,8,
 		1,9,8,3,4,2,5,6,7,
 		8,5,9,7,6,1,4,2,3,
@@ -27,19 +27,18 @@ int main() {
 	std::cout << tb << "\n";
 
 	
-	jkk::sudoku::Grid_validator vd{};
-	jkk::sudoku::Grid_validator::Result res{};
+	jkk::sudoku::Validator vd{};
+	jkk::sudoku::Marker result{};
 
-	//vd.test<jkk::sudoku::Grid_view_type::region>();
-	vd.validate_row(res, tb, 0);
 
-	if (res) {
-		std::cout << "no error\n";
-	}
-	else {
-		std::cout << "error\n";
-	}
+	auto view = jkk::sudoku::make_view<jkk::sudoku::View_type::row>(tb);
 
+
+	std::cout << view << "\n";
+
+	vd.validate(result, view[0]);
+	
+	std::cout << result << "\n";
 	
 
 	return 0;

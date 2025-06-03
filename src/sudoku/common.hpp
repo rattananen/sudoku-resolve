@@ -4,110 +4,205 @@
 #include <array>
 #include <string>
 #include <iostream>
-
+#include <functional>
 
 namespace jkk::sudoku {
 
+	
 
 	void create_table_line(std::string& out, size_t cell_w, size_t col, size_t sub, uint32_t beg = L'┏', uint32_t line = L'━', uint32_t end = L'┓', uint32_t sep = L'┯', uint32_t sep_sub = L'┳');
 
 
-	template<typename T, typename VAL>
-	struct Grid_elem_range_iter
+	template<typename T, typename VAL, typename REF = VAL&,  size_t SIZE = 9>
+	struct Elem_iter
 	{
-		using elem_t = T;
+		using elem_type = T;
 		using value_type = VAL;
+		using reference = REF;
 		void operator++()
 		{
 			++pos;
 		}
-		value_type& operator*()
+		reference operator*()
 		{
 			return m_elem[pos];
 		}
 		bool operator==(std::default_sentinel_t) const
 		{
-			return pos >= 9;
+			return pos >= SIZE;
 		}
 
-		explicit Grid_elem_range_iter(elem_t& elem) :
-			m_elem{ view }, pos{ 0 }
+		explicit Elem_iter(elem_type& elem) :
+			m_elem{ elem }, pos{ 0 }
 		{
 		}
 
 	private:
 		size_t pos;
-		elem_t& m_elem;
+		elem_type& m_elem;
 	};
 
-	enum struct Grid_element_type {
-		row, col, region
-	};
-
-
+	
 
 	//store in row-wise
 	struct Grid {
-		struct Element {
-			int32_t& operator[](size_t n);
+		using value_type = uint8_t;
+		value_type& operator[](size_t n);
 
-			std::array<int32_t, 9> data;
-		};
-
-		int32_t& operator[](size_t n);
-
-		std::array<int32_t, 81> data;
+		std::array<value_type, 81> data;
 	};
 
-	template<Grid_element_type T>
-	struct Element_value_locator {
+	struct Grid_span {
+		using value_type = Grid::value_type;
+		value_type& operator[](size_t n);
+
+		std::array<value_type, 9> data;
+	};
+
+	enum struct View_type {
+		row, col, region, cell
+	};
+
+	template<View_type T>
+	struct View_value_locator {
 		constexpr size_t operator()(size_t el_pos, size_t val_pos);
 	};
 
 	template<>
-	struct Element_value_locator<Grid_element_type::row> {
+	struct View_value_locator<View_type::row> {
 		constexpr size_t operator()(size_t el_pos, size_t val_pos) {
 			return el_pos * 9 + val_pos;
 		}
 	};
 
 	template<>
-	struct Element_value_locator<Grid_element_type::col> {
+	struct View_value_locator<View_type::col> {
 		constexpr size_t operator()(size_t el_pos, size_t val_pos) {
 			return val_pos  * 9 + el_pos;
 		}
 	};
 
 	template<>
-	struct Element_value_locator<Grid_element_type::region> {
-		constexpr size_t operator()(size_t el_pos, size_t val_pos) {
-			return el_pos * 9 + val_pos;
+	struct View_value_locator<View_type::region> {
+		 constexpr size_t operator()(size_t el_pos, size_t val_pos) {
+			return (27 * (el_pos /3) + 3 * (el_pos % 3)) + (9 * (val_pos/3) + (val_pos % 3));
 		}
 	};
 
+	template<>
+	struct View_value_locator<View_type::cell> {
+		constexpr size_t operator()(size_t el_pos, size_t val_pos) {
+			return (27 * (val_pos / 3) + 3 * (val_pos % 3)) + el_pos;
+		}
+	};
+
+	struct Sub_view {
+		
+		using value_type = Grid::value_type;
+		using iterator = Elem_iter<Sub_view, value_type>;
+		using locator_type = std::function<size_t(size_t, size_t)>;
+		Sub_view(Grid& gd, locator_type loc, size_t pos) :m_gd{ gd }, m_loc{ loc }, m_pos{ pos } {}
+
+		value_type& operator[](size_t n) {
+			return m_gd[m_loc(m_pos, n)];
+		}
+
+		iterator begin() {
+			return iterator(*this);
+		}
+
+		std::default_sentinel_t end() {
+			return {};
+		}
+
+		size_t m_pos;
+		locator_type m_loc;
+		Grid& m_gd;
+	};
+
+	template<View_type T>
+	Sub_view make_sub_view(Grid& gd, size_t pos) {
+		return Sub_view{ gd, View_value_locator<T>{}, pos };
+	}
+	
+	struct View {
+		using value_type = Grid::value_type;
+		using iterator = Elem_iter<View, Sub_view, Sub_view>;
+		using locator_type = std::function<size_t(size_t, size_t)>;
+		View(Grid& gd, locator_type loc) :m_gd{ gd }, m_loc{loc} {}
+
+		value_type& operator()(size_t el_pos, size_t val_pos) {
+			return m_gd[m_loc(el_pos, val_pos)];
+		}
+
+		Sub_view operator[](size_t n) {
+			return Sub_view{ m_gd, m_loc, n };
+		}
+
+		iterator begin() {
+			return iterator(*this);
+		}
+
+		std::default_sentinel_t end() {
+			return {};
+		}
+
+		locator_type m_loc;
+		Grid& m_gd;
+	};
+
+	template<View_type T>
+	View make_view(Grid& gd) {
+		return View{ gd, View_value_locator<T>{}};
+	}
+
+	struct Marker {
+
+		constexpr bool get(size_t pos) const {
+			return (data >> pos) & 1;
+		}
+
+		constexpr void set(size_t pos, bool val) {
+			data = (data & ~(1 << pos)) | (val << pos);
+		}
+
+		bool all() const {
+			return data == -1u;
+		}
+
+		bool none() const {
+			return data == 0;
+		}
+
+		bool some() const {
+			return data != 0 && data != -1u;
+		}
+
+
+		uint32_t data;
+
+	};
+
+	constexpr size_t index_for(Grid::value_type n);
+	
+	
+	struct Validator {
 	
 
-	
-	struct Grid_validator {
-		struct Result {
-			operator bool() const;
-			bool& operator[](size_t i);
-			void fill(bool v);
-			std::array<bool, 9> data;
-		};
-
-		void validate(Result& out, Grid::Element& elm);
+		void validate(Marker& out, Sub_view sub);
 
 		
-		Result lookup;
+		Marker lookup;
 
-		constexpr static size_t index_for(int32_t n);
 	};
 
 
 	std::ostream& operator<<(std::ostream& os, const Grid& t);
 
-	
+	std::ostream& operator<<(std::ostream& os, View& v);
 
+	std::ostream& operator<<(std::ostream& os, Sub_view& v);
+
+	std::ostream& operator<<(std::ostream& os, Marker m);
 
 }
