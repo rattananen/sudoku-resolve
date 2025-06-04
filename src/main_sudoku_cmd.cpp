@@ -1,4 +1,5 @@
 #include "sudoku/common.hpp"
+#include "sudoku/alg.hpp"
 #include <iostream>
 #include <string>
 
@@ -12,33 +13,53 @@ int main() {
 	SetConsoleOutputCP(65001); // CP_UTF8
 #endif
 
-	jkk::sudoku::Grid tb{
+	jkk::sudoku::Grid in_tb{
 		{
-	    5,3,4,6,7,8,9,1,1,
-		6,7,2,1,9,5,3,4,8,
-		1,9,8,3,4,2,5,6,7,
-		8,5,9,7,6,1,4,2,3,
-		4,2,6,8,5,3,7,9,1,
-		7,1,3,9,2,4,8,5,6,
-		9,6,1,5,3,7,2,8,4,
-		2,8,7,4,1,9,6,3,5,
-		3,4,5,2,8,6,1,7,9} };
+	    5,3,0, 0,7,0, 0,0,0,
+		6,0,0, 1,9,5, 0,0,0,
+		0,9,8, 0,0,0, 0,6,0,
 
-	std::cout << tb << "\n";
+		8,0,0, 0,6,0, 0,0,3,
+		4,0,0, 8,0,3, 0,0,1,
+		7,0,0, 0,2,0, 0,0,6,
+
+		0,6,0, 0,0,0, 2,8,0,
+		0,0,0, 4,1,9, 0,0,5,
+		0,0,0, 0,8,0, 0,7,9} };
+
+	//jkk::sudoku::Grid in_tb{
+	//	{
+	//	5,3,4, 6,7,8, 9,1,2,
+	//	6,7,2, 1,9,5, 3,4,8,
+	//	1,9,8, 3,4,2, 5,6,7,
+
+	//	8,5,9, 7,6,1, 4,2,3,
+	//	4,2,6, 8,5,3, 7,9,1,
+	//	7,1,3, 9,2,4, 8,5,6,
+
+	//	9,6,1, 5,3,7, 2,8,4,
+	//	2,8,7, 4,1,9, 6,3,5,
+	//	3,4,5, 2,8,6, 1,7,9} };
+
+	
 
 	
 	jkk::sudoku::Validator vd{};
-	jkk::sudoku::Marker result{};
+	jkk::sudoku::Grid v_tb{};
+	jkk::sudoku::Grid r_tb{};
 
+	auto v_view = jkk::sudoku::make_view<jkk::sudoku::View_type::row>(v_tb);
 
-	auto view = jkk::sudoku::make_view<jkk::sudoku::View_type::row>(tb);
-
-
-	std::cout << view << "\n";
-
-	vd.validate(result, view[0]);
 	
-	std::cout << result << "\n";
+
+	jkk::sudoku::alg::Backtrack alg{};
+
+	alg(r_tb, in_tb);
+
+	vd.validate(v_tb, r_tb);
+
+	std::cout << in_tb << "\n";
+	std::cout << r_tb << "\n";
 	
 
 	return 0;

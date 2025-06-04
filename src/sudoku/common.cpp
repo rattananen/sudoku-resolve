@@ -2,7 +2,6 @@
 #include "text.hpp"
 #include <algorithm>
 #include <iomanip>
-#include <bitset>
 
 namespace jkk::sudoku {
 
@@ -73,7 +72,6 @@ namespace jkk::sudoku {
 			}
 			else {
 				os << static_cast<int>(t.data[n]);
-				//os << n;
 			}
 
 			if (pos % 9 != 0) {
@@ -92,7 +90,7 @@ namespace jkk::sudoku {
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, View& v)
+	std::ostream& operator<<(std::ostream& os, View v)
 	{
 		for (auto it : v) {
 			os << it << "\n";
@@ -100,7 +98,7 @@ namespace jkk::sudoku {
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, Sub_view& v)
+	std::ostream& operator<<(std::ostream& os, Sub_view v)
 	{
 		for (auto it:v) {
 			os << static_cast<int>(it) << " ";
@@ -108,45 +106,103 @@ namespace jkk::sudoku {
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, Marker m)
-	{
-		return os << std::bitset<9>(m.data);
-	}
+	
 
 	Grid::value_type& Grid::operator[](size_t n)
 	{
 		return data[n];
 	}
 
-	Grid_span::value_type& Grid_span::operator[](size_t n)
+	bool Grid::is_full()
 	{
-		return data[n];
+		for (auto v:data) {
+			if (v == 0) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	
-	constexpr size_t index_for(Grid::value_type n)
+	bool Validator::validate(Grid& result, Grid& data)
 	{
-		return static_cast<size_t>(n) - 1;
-	}
+		View result_view = make_view<View_type::row>(result);
+		View data_view = make_view<View_type::row>(data);
+		bool ret = true;
 
-	void Validator::validate(Marker& out, Sub_view sub) {
-		
-		out.data = -1u;
-		lookup.data = 0;
-		
-		for (size_t pos = 0; pos != 9; ++pos) {
-			auto v = sub[pos];
-			if (v == 0) {
-				out.set(pos, false);
-				continue;
-			}
-			auto index = index_for(v);
-			if (lookup.get(index)) {
-				out.set(pos, false);
-			}
-			else {
-				lookup.set(index, true);
+		for (size_t i = 0; i < 9; i++) {
+			if (!validate(result_view[i], data_view[i])) {
+				ret = false;
 			}
 		}
+
+		result_view = make_view<View_type::col>(result);
+		data_view = make_view<View_type::col>(data);
+
+		for (size_t i = 0; i < 9; i++) {
+			if (!validate_again(result_view[i], data_view[i])) {
+				ret = false;
+			}
+		}
+
+		result_view = make_view<View_type::region>(result);
+		data_view = make_view<View_type::region>(data);
+
+		for (size_t i = 0; i < 9; i++) {
+			if (!validate_again(result_view[i], data_view[i])) {
+				ret = false;
+			}
+		}
+
+		return ret;
 	}
+
+	bool Validator::validate_again(Sub_view result, Sub_view data)
+	{
+		bool ret = true;
+		for (size_t i = 0; i < 9; i++) {
+			if (result[i] == 0 || data[i] == 0) {
+				ret = false;
+				continue;
+			}
+			for (size_t s = 0; s < 9; s++) {
+				if (s == i) {
+					continue;
+				}
+				if (data[s] == data[i]) {
+					ret = false;
+					result[i] = 0;
+					break;
+				}
+			}
+		}
+		return ret;
+	}
+
+
+
+	bool Validator::validate(Sub_view result, Sub_view data)
+	{
+		bool ret = true;
+		for (size_t i = 0; i < 9; i++) {
+			if (data[i] == 0) {
+				ret = false;
+				continue;
+			}
+			result[i] = 1;
+			for (size_t s = 0; s < 9; s++) {
+				if (s == i) {
+					continue;
+				}
+				if (data[s] == data[i]) {
+					ret = false;
+					result[i] = 0;
+					break;
+				}
+			}
+		}
+		return ret;
+	}
+
+	
 }

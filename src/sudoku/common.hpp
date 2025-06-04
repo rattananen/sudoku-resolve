@@ -9,7 +9,6 @@
 namespace jkk::sudoku {
 
 	
-
 	void create_table_line(std::string& out, size_t cell_w, size_t col, size_t sub, uint32_t beg = L'┏', uint32_t line = L'━', uint32_t end = L'┓', uint32_t sep = L'┯', uint32_t sep_sub = L'┳');
 
 
@@ -46,17 +45,11 @@ namespace jkk::sudoku {
 
 	//store in row-wise
 	struct Grid {
-		using value_type = uint8_t;
+		using value_type = uint16_t;
 		value_type& operator[](size_t n);
+		bool is_full();
 
 		std::array<value_type, 81> data;
-	};
-
-	struct Grid_span {
-		using value_type = Grid::value_type;
-		value_type& operator[](size_t n);
-
-		std::array<value_type, 9> data;
 	};
 
 	enum struct View_type {
@@ -129,7 +122,16 @@ namespace jkk::sudoku {
 		using value_type = Grid::value_type;
 		using iterator = Elem_iter<View, Sub_view, Sub_view>;
 		using locator_type = std::function<size_t(size_t, size_t)>;
+	
 		View(Grid& gd, locator_type loc) :m_gd{ gd }, m_loc{loc} {}
+
+		View& operator=(const View& other) {
+			if (this != &other) {
+				m_gd = other.m_gd;
+				m_loc = other.m_loc;
+			}
+			return *this;
+		}
 
 		value_type& operator()(size_t el_pos, size_t val_pos) {
 			return m_gd[m_loc(el_pos, val_pos)];
@@ -156,53 +158,23 @@ namespace jkk::sudoku {
 		return View{ gd, View_value_locator<T>{}};
 	}
 
-	struct Marker {
 
-		constexpr bool get(size_t pos) const {
-			return (data >> pos) & 1;
-		}
-
-		constexpr void set(size_t pos, bool val) {
-			data = (data & ~(1 << pos)) | (val << pos);
-		}
-
-		bool all() const {
-			return data == -1u;
-		}
-
-		bool none() const {
-			return data == 0;
-		}
-
-		bool some() const {
-			return data != 0 && data != -1u;
-		}
-
-
-		uint32_t data;
-
-	};
-
-	constexpr size_t index_for(Grid::value_type n);
-	
-	
 	struct Validator {
-	
+		bool validate(Grid& result, Grid& data);
+		bool validate(Sub_view result, Sub_view data);
 
-		void validate(Marker& out, Sub_view sub);
-
-		
-		Marker lookup;
-
+		/*
+		* skip invalid result
+		*/
+		bool validate_again(Sub_view result, Sub_view data);
 	};
 
 
 	std::ostream& operator<<(std::ostream& os, const Grid& t);
 
-	std::ostream& operator<<(std::ostream& os, View& v);
+	std::ostream& operator<<(std::ostream& os, View v);
 
-	std::ostream& operator<<(std::ostream& os, Sub_view& v);
+	std::ostream& operator<<(std::ostream& os, Sub_view v);
 
-	std::ostream& operator<<(std::ostream& os, Marker m);
 
 }
