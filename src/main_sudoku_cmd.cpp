@@ -42,23 +42,21 @@ int main() {
 	//	3,4,5, 2,8,6, 1,7,9} };
 
 	
-
-	
-	jkk::sudoku::Validator vd{};
 	jkk::sudoku::Grid v_tb{};
 	jkk::sudoku::Grid r_tb{};
 
-	auto v_view = jkk::sudoku::make_view<jkk::sudoku::View_type::row>(v_tb);
+	jkk::sudoku::alg::Backtrack_at_last alg{};
 
-	
-
-	jkk::sudoku::alg::Backtrack alg{};
-
-	alg(r_tb, in_tb);
-
-	vd.validate(v_tb, r_tb);
+	auto err = alg(r_tb, in_tb);
 
 	std::cout << in_tb << "\n";
+
+	if (err) {
+		std::cout << "can't resolve\n";
+		return 1;
+	}
+
+	std::cout << "result:\n";
 	std::cout << r_tb << "\n";
 	
 

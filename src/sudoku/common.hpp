@@ -47,6 +47,9 @@ namespace jkk::sudoku {
 	struct Grid {
 		using value_type = uint16_t;
 		value_type& operator[](size_t n);
+
+		const value_type& operator[](size_t n) const;
+
 		bool is_full();
 
 		std::array<value_type, 81> data;
@@ -90,7 +93,6 @@ namespace jkk::sudoku {
 	};
 
 	struct Sub_view {
-		
 		using value_type = Grid::value_type;
 		using iterator = Elem_iter<Sub_view, value_type>;
 		using locator_type = std::function<size_t(size_t, size_t)>;

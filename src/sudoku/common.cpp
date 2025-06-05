@@ -106,9 +106,12 @@ namespace jkk::sudoku {
 		return os;
 	}
 
-	
-
 	Grid::value_type& Grid::operator[](size_t n)
+	{
+		return data[n];
+	}
+
+	const Grid::value_type& Grid::operator[](size_t n) const
 	{
 		return data[n];
 	}
