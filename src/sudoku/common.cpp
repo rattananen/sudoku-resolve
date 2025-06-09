@@ -38,7 +38,17 @@ namespace jkk::sudoku {
 		out += cv.to_string_view(end);
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Grid& t) {
+	std::ostream& operator<<(std::ostream& os, const Grid& gd) {
+		for (size_t i = 0;i < 81;++i) {
+			os << gd[i] << " ";
+			if ((i+1) % 9 == 0) {
+				os << "\n";
+			}
+		}
+		return os;
+	}
+
+	void draw_table(std::ostream& os, const Grid& t) {
 		constexpr size_t tsize = 9;
 		constexpr size_t wsize = 3;
 		constexpr size_t end = 81;
@@ -87,7 +97,6 @@ namespace jkk::sudoku {
 		create_table_line(line, wsize, tsize, wsize, L'┗', L'━', L'┛', L'┷', L'┻');
 
 		os << sep_thick << "\n" << line << "\n";
-		return os;
 	}
 
 
@@ -124,6 +133,16 @@ namespace jkk::sudoku {
 			}
 		}
 		return true;
+	}
+
+	bool Grid::is_bad()
+	{
+		for (auto v : data) {
+			if (v > 9 || v < 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	bool is_ok(const Grid& in)

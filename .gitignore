@@ -5,3 +5,4 @@ out/
 vc140.idb
 vc140.pdb
 wasm/
+assets/test_out.txt

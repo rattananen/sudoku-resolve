@@ -1,0 +1,1 @@
+f641335602764962142cb80969acfc4b6f0635f2  sudoku_resolve.exe

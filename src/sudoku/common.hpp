@@ -25,6 +25,8 @@ namespace jkk::sudoku {
 
 		bool is_full();
 
+		bool is_bad();
+
 		std::array<value_type, 81> data;
 	};
 
@@ -34,6 +36,8 @@ namespace jkk::sudoku {
 
 
 	std::ostream& operator<<(std::ostream& os, const Grid& t);
+
+	void draw_table(std::ostream& os, const Grid& t);
 
 
 }
