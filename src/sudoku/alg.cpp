@@ -2,65 +2,52 @@
 
 namespace jkk::sudoku::alg {
 
-	void Backtrack_at_last::make_candidate_track(Candidate_track& to, const Candidate_table& tb)
-	{
 
-		for (size_t i = 0; i < 81; ++i) {
-			to.size_tb[i] = tb[i].size();
-		}
-	}
-
-	int Backtrack_at_last::operator()(Grid& result, Grid& input)
+	int Candidate_reduce::operator()(Grid& result)
 	{
 		Candidate_table ctb{};
 
-		result = input;
 		refine_full(ctb, result);
 
-
-
-		/*while (ctb.has_size_1()) {
-			solve_by_pick_candidate_size_1(ctb, result);
+		while (ctb.has_size_1()) {
+			do_solve(ctb, result);
 			refine_full(ctb, result);
-		}*/
+		}
 
 
+		if (ctb.candidate_size() == 0) {
+			return  0;
+		}
 
-		/*	if (ctb.candidate_size() == 0) {
-				return  0;
-			}*/
-
-
-		return solve_by_force(ctb, result);
+		return 1;
 	}
 
-	template<View_type T>
-	void Backtrack_at_last::refine(Candidate_table& out, Grid& in)
+
+	void Candidate_reduce::refine_as(Candidate_table& out, const Grid& in, Candidate_reduce::locator_type fn)
 	{
 		for (size_t i = 0; i < 9; ++i) {
 			Candidate cd{ 0 };
-			auto st = make_sub_table<T>(out, i);
-			auto sv = make_sub_view<T>(in, i);
-			for (size_t n = 0; n < 9; ++n) {
-				if (sv[n] != 0) {
-					cd.push(sv[n]);
+			for (size_t j = 0; j < 9; ++j) {
+				size_t n = fn(i, j);
+				if (in[n] != 0) {
+					cd.push(in[n]);
 				}
 			}
-			for (size_t n = 0; n < 9; ++n) {
-				st[n].unset(cd);
+			for (size_t j = 0; j < 9; ++j) {
+				out[fn(i, j)].unset(cd);
 			}
 		}
 	}
 
-	void Backtrack_at_last::refine_full(Candidate_table& out, Grid& in)
+	void Candidate_reduce::refine_full(Candidate_table& out,const Grid& in)
 	{
 		clear(out, in);
-		refine<View_type::row>(out, in);
-		refine<View_type::col>(out, in);
-		refine<View_type::region>(out, in);
+		refine_as(out, in, [](size_t row, size_t col) { return row * 9 + col; });
+		refine_as(out, in, [](size_t col, size_t row) { return row * 9 + col; });
+		refine_as(out, in, [](size_t sub_n, size_t n) { return (27 * (sub_n / 3) + 3 * (sub_n % 3)) + (9 * (n / 3) + (n % 3)); });
 	}
 
-	void Backtrack_at_last::clear(Candidate_table& out, Grid& in)
+	void Candidate_reduce::clear(Candidate_table& out, const Grid& in)
 	{
 		for (size_t i = 0; i < 81; ++i) {
 			if (in[i] != 0) {
@@ -69,7 +56,7 @@ namespace jkk::sudoku::alg {
 		}
 	}
 
-	void Backtrack_at_last::solve_by_pick_candidate_size_1(Candidate_table& ctb, Grid& in)
+	void Candidate_reduce::do_solve(Candidate_table& ctb, Grid& in)
 	{
 		for (size_t i = 0; i < 81; ++i) {
 			if (ctb[i].size() == 1) {
@@ -78,86 +65,11 @@ namespace jkk::sudoku::alg {
 		}
 	}
 
-	int Backtrack_at_last::solve_by_force(const Candidate_table& ctb, Grid& result)
-	{
-		Candidate_track track{};
-		make_candidate_track(track, ctb);
 
-		
-		std::cout << "solve_by_force\n" << result << "\n";
-		std::cout << ctb << "\n";
-	
-		size_t i = 0;
-		while (!is_valid(result)) {
-			for (size_t i = 0; i < 81; ++i) {
-				if (size_tb[i] > 0) {
-					in[i] = f_ctb[i].peek(track_tb[i]);
-				}
-			}
-			track.next();
-			if (i++ == 10000) {
-				break;
-			}
-			
-		}
-
-		std::cout << track << "\n";
-		return 0;
-	}
-
-	bool Backtrack_at_last::is_valid(Grid& in)
-	{
-		View view = make_view<View_type::row>(in);
-
-		for (auto sub : view) {
-			if (!is_valid(sub)) {
-				return false;
-			}
-		}
-		view = make_view<View_type::col>(in);
-
-		for (auto sub : view) {
-			if (!is_valid(sub)) {
-				return false;
-			}
-		}
-
-		view = make_view<View_type::region>(in);
-
-		for (auto sub : view) {
-			if (!is_valid(sub)) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool Backtrack_at_last::is_valid(Sub_view data)
-	{
-		for (size_t i = 0; i < 9; i++) {
-			if (data[i] == 0) {
-				return false;
-				continue;
-			}
-			for (size_t s = 0; s < 9; s++) {
-				if (s == i) {
-					continue;
-				}
-				if (data[s] == data[i]) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-
-
-	std::ostream& operator<<(std::ostream& os, Backtrack_at_last::Candidate m)
+	std::ostream& operator<<(std::ostream& os, Candidate_reduce::Candidate m)
 	{
 		for (size_t i = 0; i < 9; ++i) {
-			Backtrack_at_last::Candidate::value_type mask = 1 << i;
+			Candidate_reduce::Candidate::value_type mask = 1 << i;
 			if ((m.data & mask) == mask) {
 				os << (i + 1);
 			}
@@ -168,7 +80,7 @@ namespace jkk::sudoku::alg {
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Backtrack_at_last::Candidate_table& tb)
+	std::ostream& operator<<(std::ostream& os, const Candidate_reduce::Candidate_table& tb)
 	{
 		for (size_t i = 0; i < 81; ++i) {
 			auto pos = i + 1;
@@ -185,21 +97,73 @@ namespace jkk::sudoku::alg {
 		}
 		return os;
 	}
-	std::ostream& operator<<(std::ostream& os, const Backtrack_at_last::Candidate_track& tb)
+
+
+
+	int Backtrack::operator()(Grid& result) {
+		if (do_solve(result)) {
+			return 0;
+		}
+		return 1;
+	}
+
+	bool Backtrack::do_solve(Grid& result)
 	{
-		for (size_t i = 0; i < 81; ++i) {
-			os << i << '-' << tb.size_tb[i] << ':' << tb.track_tb[i] << " ";
-			auto pos = i + 1;
-			if (pos % 3 == 0) {
-				os << "  ";
-			}
-			if (pos % 9 == 0) {
-				os << '\n';
-			}
-			if (pos % 27 == 0) {
-				os << '\n';
+		size_t row, col;
+
+		for (row = 0; row < 9; ++row) {
+			for (col = 0; col < 9; ++col) {
+				if (result(row, col) == 0) {
+					goto solve;
+				}
 			}
 		}
-		return os;
+
+		return true; //nothing to solve
+	solve:
+
+		for (Grid::value_type num = 1; num <= 9; ++num) {
+			if (is_ok(result, row, col, num)) {
+				result(row, col) = num;
+				if (do_solve(result)) {
+					return true;
+				}
+
+				result(row, col) = 0; // Backtrack
+			}
+		}
+		return false; //trigger Backtrack
+	}
+
+
+
+	bool Backtrack::is_ok(const Grid& in, size_t row, size_t col, Grid::value_type num)
+	{
+		for (size_t n = 0; n < 9; ++n) {
+			if (in(row, n) == num) {
+				return false;
+			}
+		}
+
+		for (size_t n = 0; n < 9; ++n) {
+			if (in(n, col) == num) {
+				return false;
+			}
+		}
+
+		size_t start_row = row - row % 3, start_col = col - col % 3;
+		for (size_t n = 0; n < 3; ++n)
+			for (size_t k = 0; k < 3; ++k)
+				if (in(n + start_row, k + start_col) == num)
+					return false;
+		return true;
+	}
+
+	int Combine::operator()(Grid& result) {
+		int err = Candidate_reduce{}(result);
+		if (!err) {
+			return 0;
+		}
+		return Backtrack{}(result);
 	}
 }

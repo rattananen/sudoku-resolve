@@ -90,21 +90,6 @@ namespace jkk::sudoku {
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, View v)
-	{
-		for (auto it : v) {
-			os << it << "\n";
-		}
-		return os;
-	}
-
-	std::ostream& operator<<(std::ostream& os, Sub_view v)
-	{
-		for (auto it:v) {
-			os << static_cast<int>(it) << " ";
-		}
-		return os;
-	}
 
 	Grid::value_type& Grid::operator[](size_t n)
 	{
@@ -114,6 +99,21 @@ namespace jkk::sudoku {
 	const Grid::value_type& Grid::operator[](size_t n) const
 	{
 		return data[n];
+	}
+
+	const Grid::value_type& Grid::operator()(size_t row, size_t col) const
+	{
+		return data[row * 9 + col];
+	}
+
+	Grid::value_type& Grid::as_sub(size_t sub_n, size_t n)
+	{
+		 return data[(27 * (sub_n / 3) + 3 * (sub_n % 3)) + (9 * (n / 3) + (n % 3))];
+	}
+
+	Grid::value_type& Grid::operator()(size_t row, size_t col)
+	{
+		return data[row * 9 + col];
 	}
 
 	bool Grid::is_full()
@@ -126,86 +126,44 @@ namespace jkk::sudoku {
 		return true;
 	}
 
-	
-	bool Validator::validate(Grid& result, Grid& data)
+	bool is_ok(const Grid& in)
 	{
-		View result_view = make_view<View_type::row>(result);
-		View data_view = make_view<View_type::row>(data);
-		bool ret = true;
-
-		for (size_t i = 0; i < 9; i++) {
-			if (!validate(result_view[i], data_view[i])) {
-				ret = false;
-			}
-		}
-
-		result_view = make_view<View_type::col>(result);
-		data_view = make_view<View_type::col>(data);
-
-		for (size_t i = 0; i < 9; i++) {
-			if (!validate_again(result_view[i], data_view[i])) {
-				ret = false;
-			}
-		}
-
-		result_view = make_view<View_type::region>(result);
-		data_view = make_view<View_type::region>(data);
-
-		for (size_t i = 0; i < 9; i++) {
-			if (!validate_again(result_view[i], data_view[i])) {
-				ret = false;
-			}
-		}
-
-		return ret;
-	}
-
-	bool Validator::validate_again(Sub_view result, Sub_view data)
-	{
-		bool ret = true;
-		for (size_t i = 0; i < 9; i++) {
-			if (result[i] == 0 || data[i] == 0) {
-				ret = false;
-				continue;
-			}
-			for (size_t s = 0; s < 9; s++) {
-				if (s == i) {
+		for (size_t row = 0; row < 9; ++row) {
+			for (size_t col = 0; col < 9; ++col) {
+				if (in(row, col) == 0) {
 					continue;
 				}
-				if (data[s] == data[i]) {
-					ret = false;
-					result[i] = 0;
-					break;
+				if (!is_ok(in, row, col)) {
+					return false;
 				}
 			}
 		}
-		return ret;
+		return true;
 	}
 
-
-
-	bool Validator::validate(Sub_view result, Sub_view data)
-	{
-		bool ret = true;
-		for (size_t i = 0; i < 9; i++) {
-			if (data[i] == 0) {
-				ret = false;
-				continue;
-			}
-			result[i] = 1;
-			for (size_t s = 0; s < 9; s++) {
-				if (s == i) {
-					continue;
-				}
-				if (data[s] == data[i]) {
-					ret = false;
-					result[i] = 0;
-					break;
-				}
+	bool is_ok(const Grid& in, size_t row, size_t col) {
+		auto num = in(row, col);
+		for (size_t n = 0; n < 9; ++n) {
+			if (n != col  && in(row, n) == num) {
+				return false;
 			}
 		}
-		return ret;
+
+		for (size_t n = 0; n < 9; ++n) {
+			if (n != row && in(n, col) == num) {
+				return false;
+			}
+		}
+
+		size_t start_row = row - row % 3, start_col = col - col % 3;
+		for (size_t n = 0; n < 3; ++n)
+			for (size_t k = 0; k < 3; ++k) {
+				auto x = n + start_row;
+				auto y = k + start_col;
+				if (!(x == row && y == col) && in(x, y) == num)
+					return false;
+			}
+		return true;
 	}
 
-	
 }

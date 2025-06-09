@@ -5,12 +5,11 @@
 #include <iostream>
 #include <bit>
 #include <array>
+#include <functional>
 
 namespace jkk::sudoku::alg {
 
-
-	//aka brute force
-	struct Backtrack_at_last {
+	struct Candidate_reduce {
 
 		struct Candidate {
 			using value_type = Grid::value_type;
@@ -75,6 +74,14 @@ namespace jkk::sudoku::alg {
 				return data[n];
 			}
 
+			Candidate& operator()(size_t row, size_t col) {
+				return data[row * 9 + col];
+			}
+
+			const Candidate& operator()(size_t row, size_t col) const {
+				return data[row * 9 + col];
+			}
+
 			size_t candidate_size() const {
 				size_t n{};
 				for (auto v : data) {
@@ -93,72 +100,33 @@ namespace jkk::sudoku::alg {
 			std::array<Candidate, 81> data;
 		};
 
-		struct Sub_table {
-			using value_type = Candidate;
-			using locator_type = std::function<size_t(size_t, size_t)>;
-			Sub_table(Candidate_table& tb, locator_type loc, size_t pos) :m_tb{ tb }, m_loc{ loc }, m_pos{ pos } {}
+		
 
-			value_type& operator[](size_t n) {
-				return m_tb[m_loc(m_pos, n)];
-			}
-		private:
-			size_t m_pos;
-			locator_type m_loc;
-			Candidate_table& m_tb;
-		};
+		using locator_type = std::function<size_t(size_t, size_t)>;
 
+		int operator()(Grid& result);
 
+		void refine_as(Candidate_table& out, const Grid& in, locator_type fn);
+		void refine_full(Candidate_table& ctb, const Grid& in);
+		void clear(Candidate_table& ctb, const  Grid& in);
+		void do_solve(Candidate_table& ctb, Grid& in);
 
-		template<View_type T>
-		Sub_table make_sub_table(Candidate_table& tb, size_t pos) {
-			return Sub_table{ tb, View_value_locator<T>{}, pos };
-		}
-
-		struct Candidate_track {
-			using value_type = Grid::value_type;
-
-			void next() {
-				for (size_t i = 0;i< 81; ++i) {
-					if (track_tb[i] < size_tb[i]) {
-						track_tb[i]++;
-						break;
-					}
-					else {
-						track_tb[i] = 0;
-					}
-				}
-			}
-		/*	void fill(const Candidate_table& f_ctb, Grid& in) {
-				for (size_t i = 0; i < 81; ++i) {
-					if (size_tb[i] > 0) {
-						in[i] = f_ctb[i].peek(track_tb[i]);
-					}
-				}
-			}*/
-
-			std::array<value_type, 81> size_tb;
-			std::array<value_type, 81> track_tb;
-		};
-
-		void make_candidate_track(Candidate_track& to,const Candidate_table& tb);
-
-		int operator()(Grid& result, Grid& input);
-
-		template<View_type T>
-		void refine(Candidate_table& out,  Grid& in);
-		void refine_full(Candidate_table& ctb,  Grid& in);
-		void clear(Candidate_table& ctb,  Grid& in);
-		void solve_by_pick_candidate_size_1(Candidate_table& ctb, Grid& in);
-
-
-		int solve_by_force(const Candidate_table& ctb_in, Grid& reuslt);
-		bool is_valid(Grid& in);
-		bool is_valid(Sub_view data);
 	};
 
-	std::ostream& operator<<(std::ostream& os, Backtrack_at_last::Candidate m);
+	struct Backtrack {
+		int operator()(Grid& result);
 
-	std::ostream& operator<<(std::ostream& os, const Backtrack_at_last::Candidate_table& tb);
+	//private:
+		bool do_solve(Grid& result);
+		bool is_ok(const Grid& in, size_t row, size_t col, Grid::value_type num);
+	};
 
-	std::ostream& operator<<(std::ostream& os, const Backtrack_at_last::Candidate_track& tb);
+	struct Combine {
+		int operator()(Grid& result);
+	};
+
+	std::ostream& operator<<(std::ostream& os, Candidate_reduce::Candidate m);
+
+	std::ostream& operator<<(std::ostream& os, const Candidate_reduce::Candidate_table& tb);
+
 }

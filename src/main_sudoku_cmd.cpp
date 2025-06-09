@@ -1,64 +1,89 @@
 #include "sudoku/common.hpp"
 #include "sudoku/alg.hpp"
+#include "sudoku/time.hpp"
 #include <iostream>
 #include <string>
+#include <fstream>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
-int main() {
+
+int cmd_file_in(std::string_view file_str, std::ostream& os) {
+	std::cout << file_str << "\n";
+	std::ifstream ifs{ file_str.data() };
+	if (!ifs.is_open()) {
+		std::cerr << "can't open input file: << " << file_str.data() << "\n";
+		return 1;
+	}
+
+	jkk::sudoku::Grid in_tb{};
+
+	for (size_t n = 0; n < 81; ++n) {
+		ifs >> in_tb[n];
+	}
+
+	if (ifs.fail()) {
+		std::cerr << "invalid value\n";
+		return 1;
+	}
+
+	if (!is_ok(in_tb)) {
+		std::cerr << "invalid input\n";
+		return 1;
+	}
+
+
+	jkk::sudoku::alg::Combine alg{};
+
+	jkk::time::Stopwatch stopwatch;
+
+	stopwatch.start();
+	auto err = alg(in_tb);
+	auto dp = stopwatch.stop();
+
+	std::cerr << "time use: " << dp << "\n";
+
+	if (err) {
+		std::cerr << "can't resolve\n";
+		return 1;
+	}
+
+	os << in_tb << "\n";
+
+	return 0;
+}
+
+int cmd_file_in_out(std::string_view file_str, std::string_view file_out_str) {
+	std::ofstream ofs{ file_out_str.data() };
+	if (!ofs.is_open()) {
+		std::cerr << "can't open output file: " << file_out_str << "\n";
+		return 1;
+	}
+
+	return cmd_file_in(file_str, ofs);
+}
+
+constexpr auto help_text =
+"usage:\n"
+" sudoku_resolve <filepath>\n"
+" sudoku_resolve <filepath in> <filepath out>\n";
+
+
+int main(int argc, const char** argv) {
 
 #ifdef _WIN32
 	SetConsoleOutputCP(65001); // CP_UTF8
 #endif
-
-	jkk::sudoku::Grid in_tb{
-		{
-	    5,3,0, 0,7,0, 0,0,0,
-		6,0,0, 1,9,5, 0,0,0,
-		0,9,8, 0,0,0, 0,6,0,
-
-		8,0,0, 0,6,0, 0,0,3,
-		4,0,0, 8,0,3, 0,0,1,
-		7,0,0, 0,2,0, 0,0,6,
-
-		0,6,0, 0,0,0, 2,8,0,
-		0,0,0, 4,1,9, 0,0,5,
-		0,0,0, 0,8,0, 0,7,9} };
-
-	//jkk::sudoku::Grid in_tb{
-	//	{
-	//	5,3,4, 6,7,8, 9,1,2,
-	//	6,7,2, 1,9,5, 3,4,8,
-	//	1,9,8, 3,4,2, 5,6,7,
-
-	//	8,5,9, 7,6,1, 4,2,3,
-	//	4,2,6, 8,5,3, 7,9,1,
-	//	7,1,3, 9,2,4, 8,5,6,
-
-	//	9,6,1, 5,3,7, 2,8,4,
-	//	2,8,7, 4,1,9, 6,3,5,
-	//	3,4,5, 2,8,6, 1,7,9} };
-
-	
-	jkk::sudoku::Grid v_tb{};
-	jkk::sudoku::Grid r_tb{};
-
-	jkk::sudoku::alg::Backtrack_at_last alg{};
-
-	auto err = alg(r_tb, in_tb);
-
-	std::cout << in_tb << "\n";
-
-	if (err) {
-		std::cout << "can't resolve\n";
-		return 1;
+	if (argc == 2) {
+		return cmd_file_in(argv[1], std::cout);
 	}
 
-	std::cout << "result:\n";
-	std::cout << r_tb << "\n";
-	
+	if (argc == 3) {
+		return cmd_file_in_out(argv[1], argv[2]);
+	}
 
-	return 0;
+	std::cerr << "invalid arguments\n" << help_text;
+	return 1;
 }
