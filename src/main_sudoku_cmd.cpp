@@ -11,7 +11,7 @@
 #endif
 
 
-int do_common(jkk::sudoku::Grid& in_tb,  std::ostream& os,  bool draw_table) {
+int do_common(jkk::sudoku::Grid& in_tb, std::ostream& os, bool draw_table) {
 	if (in_tb.is_bad() || !jkk::sudoku::is_ok(in_tb)) {
 		std::cerr << "invalid grid\n";
 		return 1;
@@ -48,7 +48,7 @@ int cmd_interactive() {
 	std::string buf;
 
 	std::cout << "insert [0-9] for 81 numbers seperate with space (no need to insert all numbers at once)\n";
-	
+
 	for (size_t pos = 0; pos < 81;) {
 		std::cout << (81 - pos) << " numbers remain. position " << (pos + 1) << " is next.\n";
 		std::getline(std::cin, buf);
@@ -59,7 +59,7 @@ int cmd_interactive() {
 		jkk::sudoku::Grid::value_type number;
 
 		while (pos < 81 && iss >> number) {
-			if (number >=0 && number <= 9) {
+			if (number >= 0 && number <= 9) {
 				in_tb[pos] = number;
 				++pos;
 			}
