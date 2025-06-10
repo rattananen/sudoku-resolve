@@ -18,7 +18,6 @@ function(Add_dist for)
         TARGET ${for} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy "${tname}" ${dest_path}
         COMMAND ${CMAKE_COMMAND} -E sha1sum "${tname}" > ${checksum}
-        DEPENDS ${dest_path} ${checksum}
      )
 endfunction()
 
