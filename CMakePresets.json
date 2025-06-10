@@ -38,6 +38,30 @@
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
+          {
+      "name": "winx64vcpkg-debug",
+      "displayName": "winx64vcpkg Debug",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+          "type": "FILEPATH"
+        }
+      }
+    },
+     {
+      "name": "winx64vcpkg-release",
+      "displayName": "winx64vcpkg Release",
+      "inherits": "winx64vcpkg-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
     {
       "name": "linux-debug",
       "displayName": "Linux Debug",
