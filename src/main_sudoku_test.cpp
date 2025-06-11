@@ -16,11 +16,12 @@ int main()
     }
 
     // Open input image with leptonica library
-    Pix* image = pixRead("E:\\works\\sudoku-resolve\\assets\\test_in.png");
+    Pix* image = pixRead("D:\\works\\sudoku-resolve\\assets\\test_in.png");
     api->SetVariable("tessedit_char_whitelist", "0123456789");
     api->SetImage(image);
     // Get OCR result
    Tess_str text(api->GetUTF8Text());
+
 
    std::cout << "OCR output:\n" << text.get();
 
