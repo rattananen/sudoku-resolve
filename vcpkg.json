@@ -4,8 +4,24 @@
   "version": "0.1",
   "dependencies": [
     {
-      "name": "tesseract"
+      "name": "tesseract",
+      "default-features": false
     },
-    "leptonica"
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "png",
+        "highgui",
+        {
+          "name": "win32ui",
+          "platform": "windows"
+        },
+        {
+          "name": "gtk",
+          "platform": "linux"
+        }
+      ]
+    }
   ]
 }
