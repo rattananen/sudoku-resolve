@@ -8,9 +8,7 @@ project ("sudoku-resolve")
 
 include("Util.cmake")
 
-find_package(Tesseract CONFIG REQUIRED)
 
-find_package(OpenCV COMPONENTS png highgui)
 
 
 file(GLOB sodoku_files 
@@ -22,12 +20,23 @@ file(GLOB sodoku_files
 
 add_executable (sudoku_resolve "src/main_sudoku_cmd.cpp" ${sodoku_files})
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_link_options(sudoku_resolve PRIVATE -static)
+    Add_dist(sudoku_resolve)
+endif()
+
+
+if(JKK_ENABLE_OCR)
+
+find_package(Tesseract CONFIG REQUIRED)
+find_package(OpenCV COMPONENTS png highgui)
+
 add_executable (sudoku_test "src/main_sudoku_test.cpp" ${sodoku_files})
 target_link_libraries(sudoku_test PRIVATE Tesseract::libtesseract ${OpenCV_LIBS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_link_options(sudoku_resolve PRIVATE -static)
     target_link_options(sudoku_test PRIVATE -static)
-    Add_dist(sudoku_resolve)
+endif()
+
 endif()
 

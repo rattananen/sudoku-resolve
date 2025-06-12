@@ -50,6 +50,10 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "JKK_ENABLE_OCR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "CMAKE_TOOLCHAIN_FILE": {
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
@@ -113,6 +117,10 @@
         "CMAKE_C_COMPILER": "cc",
         "CMAKE_CXX_COMPILER": "c++",
         "CMAKE_VERBOSE_MAKEFILE": true,
+        "JKK_ENABLE_OCR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "CMAKE_TOOLCHAIN_FILE": {
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
