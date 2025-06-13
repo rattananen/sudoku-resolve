@@ -7,35 +7,28 @@
 #include <format>
 
 
-void merge_lines(std::vector<cv::Vec4i>& lines, std::vector<cv::Vec4i>& merged,  bool is_horizontal) {
-	if (lines.empty()) {
+void merge_lines(const std::vector<cv::Vec4i>& sorted, std::vector<cv::Vec4i>& merged,const cv::Vec2i& axis, int px_threshold) {
+	if (sorted.empty()) {
 		return;
 	}
 
-	std::sort(lines.begin(), lines.end(), [is_horizontal](const cv::Vec4i& a, const cv::Vec4i& b) {
-		return (is_horizontal ? a[1] : a[0]) < (is_horizontal ? b[1] : b[0]);
-		});
+	merged.push_back(sorted[0]);
 
-	//std::vector<cv::Vec4i> merged_lines;
-	merged.push_back(lines[0]);
+	for (size_t i = 1; i < sorted.size(); ++i) {
+		auto& cur_line = sorted[i];
+		auto& last_merged = merged.back();
 
-	for (size_t i = 1; i < lines.size(); ++i) {
-		const cv::Vec4i& current_line = lines[i];
-		cv::Vec4i& last_merged_line = merged.back();
+		auto mag1 = cv::Vec2i(cur_line[0], cur_line[1]).ddot(axis); //project to axis
+		auto mag2 = cv::Vec2i(last_merged[0], last_merged[1]).ddot(axis);
 
-
-		int current_pos = is_horizontal ? current_line[1] : current_line[0];
-		int last_merged_pos = is_horizontal ? last_merged_line[1] : last_merged_line[0];
-
-		// If the lines are close, merge them by extending the last merged line
-		if (std::abs(current_pos - last_merged_pos) < 20) { // Merge threshold of 10 pixels
-			last_merged_line[0] = std::min(last_merged_line[0], current_line[0]);
-			last_merged_line[1] = std::min(last_merged_line[1], current_line[1]);
-			last_merged_line[2] = std::max(last_merged_line[2], current_line[2]);
-			last_merged_line[3] = std::max(last_merged_line[3], current_line[3]);
+		if (std::abs(mag1 - mag2) < px_threshold) {
+			last_merged[0] = std::min(last_merged[0], cur_line[0]);
+			last_merged[1] = std::min(last_merged[1], cur_line[1]);
+			last_merged[2] = std::max(last_merged[2], cur_line[2]);
+			last_merged[3] = std::max(last_merged[3], cur_line[3]);
 		}
 		else {
-			merged.push_back(current_line);
+			merged.push_back(cur_line);
 		}
 	}
 }
@@ -68,41 +61,65 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	cv::Mat im_norm;
-
-	cv::cvtColor(im, im_norm, cv::COLOR_BGR2GRAY);
-	cv::GaussianBlur(im_norm, im_norm, cv::Size(3, 3), 0);
-	cv::threshold(im_norm, im_norm, 0,  255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
+	//preprocess
+	cv::Mat im_bin;
+	cv::cvtColor(im, im_bin, cv::COLOR_BGR2GRAY);
+	cv::GaussianBlur(im_bin, im_bin, cv::Size(3, 3), 0);
+	cv::threshold(im_bin, im_bin, 0,  255, cv::THRESH_BINARY_INV | cv::THRESH_OTSU);
 	//cv::adaptiveThreshold(im_norm, im_norm, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY_INV, 11, 2);
+	//end preprocess
 
-	cv::Mat im_with_table = im.clone();
 
-	cv::Mat im_line_process;
+	
+
 	std::vector<cv::Vec4i> result_lines;
 	result_lines.reserve(50);
 
 	
+	//horizontal
 
-	im_norm.copyTo(im_line_process);
-	find_line(im_line_process, result_lines, cv::Size(im_line_process.cols - 10, 1), 80, 10);
+	cv::Mat im_horizon = im_bin.clone();
+	find_line(im_horizon, result_lines, cv::Size(im_horizon.cols - 10, 1), 80, 10);
 	
 	std::vector<cv::Vec4i> h_lines;
 	h_lines.reserve(10);
 
-	merge_lines(result_lines, h_lines, true);
-	draw_line(im_with_table, h_lines, cv::Scalar(0, 255, 0));
+	std::sort(result_lines.begin(), result_lines.end(), [](const cv::Vec4i& a, const cv::Vec4i& b) {
+		return a[1] < b[1];
+		});
 
-	result_lines.clear();
+	merge_lines(result_lines, h_lines, cv::Vec2i(0,1),20);
 	
-	im_norm.copyTo(im_line_process);
-	find_line(im_line_process, result_lines, cv::Size(1, im_line_process.rows - 10), 80, 10);
+
+	//vertical
+	result_lines.clear();
+
+	cv::Mat im_vertical = im_bin.clone();
+	find_line(im_vertical, result_lines, cv::Size(1, im_vertical.rows - 10), 80, 10);
 
 	std::vector<cv::Vec4i> v_lines;
 	v_lines.reserve(10);
 
-	merge_lines(result_lines, v_lines, false);
-	draw_line(im_with_table, v_lines, cv::Scalar(0, 0, 255));
+	std::sort(result_lines.begin(), result_lines.end(), [](const cv::Vec4i& a, const cv::Vec4i& b) {
+		return a[0] < b[0];
+		});
 
+	merge_lines(result_lines, v_lines, cv::Vec2i(1, 0), 20);
+
+
+	std::cout << std::format("h size={}\nv size={}\n", h_lines.size(), v_lines.size());
+
+	if (h_lines.size() != 10 || v_lines.size() != 10) {
+		std::cerr << "no table detect\n";
+		return 1;
+	}
+
+	cv::Mat im_table_only = im_vertical + im_horizon;
+	//cv::add(im_vertical, im_horizon, im_table_only);
+	im_bin -= im_table_only;
+	//cv::subtract(im_bin, im_table_only, im_bin);
+
+	//ocr
 	tesseract::TessBaseAPI api;
 
 	if (api.Init(nullptr, "eng")) {
@@ -110,27 +127,44 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	api.SetVariable("tessedit_char_whitelist", "0123456789");
-	api.SetPageSegMode(tesseract::PSM_SINGLE_BLOCK);
-
-
-	api.SetImage(im_norm.data, im_norm.cols, im_norm.rows, im_norm.elemSize(), im_norm.step1());
-
-
-	Tess_str outText(api.GetUTF8Text());
-
 	
-	std::cout << "output:\n" << outText.get();
+	api.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+	api.SetVariable("debug_file", "/dev/null");
+	
+
+
+	cv::imshow("im_norm_win", im_bin);
+	cv::imshow("im_table_only", im_table_only);
+
+	auto crop_win = "crop_win";
+	cv::namedWindow(crop_win);
+
+	for (size_t i = 0;i < 9; ++i) {
+		auto& h_line = h_lines[i];
+		auto& h_line_next = h_lines[i + 1];
+		for (size_t j = 0; j < 9; ++j) {
+			
+			auto& v_line =  v_lines[j];
+			auto& v_line_next = v_lines[j + 1];
+			cv::Rect rect(v_line[0], h_line[1], v_line_next[0] - v_line[0], h_line_next[1] - h_line[1]);
+
+			cv::Mat crop = im_bin(rect);
+
+			api.SetImage(crop.data, crop.cols, crop.rows, crop.elemSize(), crop.step1());
+
+			Tess_str outText(api.GetUTF8Text());
+
+			std::cout << std::format("[{}, {}]={}\n",i,j,outText.get());
+
+			cv::imshow(crop_win, crop);
+
+			cv::waitKey(0);
+		}
+	}
+
+
+
 	api.End();
 
-
-	auto im_norm_win = "im_norm_win";
-	auto im_vert_win = "vert_line";
-	auto im_tb_win = "table_lines";
-
-	cv::imshow(im_norm_win, im_norm);
-	cv::imshow(im_tb_win, im_with_table);
-
-
-	cv::waitKey(0);
 	return 0;
 }
