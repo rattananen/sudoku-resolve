@@ -6,12 +6,13 @@ set(CMAKE_CXX_STANDARD 20)
 
 project ("sudoku-resolve")
 
-option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 include("Util.cmake")
 
- if(MSVC AND CMAKE_BUILD_TYPE STREQUAL "Release")
+ if(CMAKE_BUILD_TYPE STREQUAL "Release")
    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+   set(BUILD_SHARED_LIBS OFF)
+   add_compile_options(-static)
  endif()
 
 file(GLOB sodoku_files 
@@ -24,30 +25,31 @@ file(GLOB sodoku_files
 add_executable (sudoku_resolve "src/main_sudoku_cmd.cpp" ${sodoku_files})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_link_options(sudoku_resolve PRIVATE -static)
+   # target_link_options(sudoku_resolve PRIVATE -static)
     Add_dist(sudoku_resolve)
 endif()
 
 
 if(JKK_ENABLE_OCR)
 
+#set(SW_BUILD OFF)
 find_package(Tesseract CONFIG REQUIRED)
 
-set(OpenCV_STATIC ON)
-find_package(OpenCV COMPONENTS png highgui)
+
+find_package(OpenCV)
 
 
 add_executable (sudoku_ocr "src/main_sudoku_ocr.cpp" ${sodoku_files} "src/sudoku/ocr.cpp")
-target_link_libraries(sudoku_ocr PRIVATE Tesseract::libtesseract ${OpenCV_LIBS})
+target_link_libraries(sudoku_ocr PUBLIC Tesseract::libtesseract ${OpenCV_LIBS})
 
 
 add_executable (sudoku_test "src/main_sudoku_test.cpp" ${sodoku_files})
-target_link_libraries(sudoku_test PRIVATE Tesseract::libtesseract ${OpenCV_LIBS})
+target_link_libraries(sudoku_test PRIVATE Tesseract::libtesseract ${OpenCV_LIBS} )
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-   target_link_options(sudoku_test PRIVATE -static)
-   target_link_options(sudoku_ocr PRIVATE  -static)
-endif()
+#if(CMAKE_BUILD_TYPE STREQUAL "Release")
+   #target_link_options(sudoku_test PRIVATE -static)
+   #target_link_options(sudoku_ocr PRIVATE  -static)
+#endif()
 
 endif()
 

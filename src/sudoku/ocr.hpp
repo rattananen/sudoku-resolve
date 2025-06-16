@@ -1,7 +1,9 @@
 #pragma once
 
-#include <opencv2/opencv.hpp>
-#include <tesseract/baseapi.h>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+//#include <tesseract/baseapi.h>
 #include <memory>
 #include <vector>
 
@@ -88,7 +90,7 @@ namespace jkk::ocr {
 
 
 		bool m_init = false;
-		tesseract::TessBaseAPI api;
+		//tesseract::TessBaseAPI api;
 	};
 
 }
