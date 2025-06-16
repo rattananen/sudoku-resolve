@@ -9,8 +9,8 @@
       "installDir": "${sourceDir}/out/install/${presetName}",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
-        "CMAKE_CXX_COMPILER": "cl.exe"
-
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_VERBOSE_MAKEFILE": true
       },
       "condition": {
         "type": "equals",
@@ -20,6 +20,7 @@
     },
     {
       "name": "winx64-debug",
+      "hidden": true,
       "displayName": "winx64 Debug",
       "inherits": "windows-base",
       "architecture": {
@@ -39,7 +40,36 @@
       }
     },
     {
+      "name": "winx64vcpkg-debug",
+      "displayName": "winx64vcpkg Debug",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "JKK_ENABLE_OCR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "CMAKE_TOOLCHAIN_FILE": {
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+          "type": "FILEPATH"
+        }
+      }
+    },
+    {
+      "name": "winx64vcpkg-release",
+      "displayName": "winx64vcpkg Release",
+      "inherits": "winx64vcpkg-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
       "name": "linux-debug",
+      "hidden": true,
       "displayName": "Linux Debug",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
@@ -65,6 +95,46 @@
       "name": "linux-release",
       "displayName": "Linux Release",
       "inherits": "linux-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-vcpkg-debug",
+      "hidden": true,
+      "displayName": "Linux-vcpkg Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_MAKE_PROGRAM": "ninja",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "cc",
+        "CMAKE_CXX_COMPILER": "c++",
+        "CMAKE_VERBOSE_MAKEFILE": true,
+        "JKK_ENABLE_OCR": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "CMAKE_TOOLCHAIN_FILE": {
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+          "type": "FILEPATH"
+        }
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux-vcpkg-release",
+      "displayName": "Linux vcpkg Release",
+      "inherits": "linux-vcpkg-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
