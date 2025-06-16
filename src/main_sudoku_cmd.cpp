@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -45,23 +46,29 @@ int do_common(jkk::sudoku::Grid& in_tb, std::ostream& os, bool draw_table) {
 int cmd_interactive() {
 	jkk::sudoku::Grid in_tb{};
 
-	std::string buf;
+	std::string line;
+	std::string str;
+	jkk::sudoku::Grid::value_type number;
 
-	std::cout << "insert [0-9] for 81 numbers seperate with space (no need to insert all numbers at once)\n";
+	std::cout << "Enter contiguous [0-9] for 81 digits (no need to insert all digits at once)\n";
 
 	for (size_t pos = 0; pos < 81;) {
-		std::cout << (81 - pos) << " numbers remain. position " << (pos + 1) << " is next.\n";
-		std::getline(std::cin, buf);
-		if (buf.empty()) {
+		std::cout << (81 - pos) << " digits remain. position " << (pos + 1) << " is next.\n";
+		std::getline(std::cin, line);
+		if (line.empty()) {
 			continue;
 		}
-		std::istringstream iss(buf);
-		jkk::sudoku::Grid::value_type number;
-
-		while (pos < 81 && iss >> number) {
-			if (number >= 0 && number <= 9) {
-				in_tb[pos] = number;
-				++pos;
+		std::istringstream iss(line);
+		
+		while (pos < 81 && iss >> str) {
+			for (auto it = str.begin(); it != str.end() && pos < 81 ; ++it, ++pos) {
+				auto ch = *it;
+				if (ch >= 48 && ch <= 57) {
+					in_tb[pos] = static_cast<jkk::sudoku::Grid::value_type>(ch - 48);
+				}
+				else {
+					in_tb[pos] = 0;
+				}
 			}
 		}
 	}
