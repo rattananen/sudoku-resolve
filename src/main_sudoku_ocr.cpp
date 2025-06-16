@@ -114,6 +114,10 @@ int main(int argc, char** argv) {
 		return cmd(argv[1], nullptr);
 	}
 
+	if (argc == 3) {
+		return cmd(argv[1], argv[2]);
+	}
+
 	std::cerr << "invalid arguments\n\n" << help_text;
 	return 1;
 }
