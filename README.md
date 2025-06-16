@@ -34,3 +34,21 @@ sudoku_ocr test.png
 sudoku_ocr test.png /path/to/tesseract-trained-models-folder
 ```
 - You can specific Tesseract trained models folder by this one.
+
+## Program building
+
+For some resone `sudoku_ocr` can't compile to static (single file) yet. but you ccould build ocr version with Cmake commad.
+
+```bash
+cmake --build --preset linux-vcpkg-release
+```
+or
+
+```bash
+cmake --build --preset winx64vcpkg-release
+```
+
+It's require [vcpkg](https://vcpkg.io/en/) for main package management.
+
+It would better if you modern IDE eg. Vscode, Clion, Vs 2022, ... .
+
