@@ -65,31 +65,20 @@ namespace jkk::ocr {
 
 		return 0;
 	}
-	Ocr::~Ocr()
-	{
-		
-		//api.End();
-		
-	}
 
-	int Ocr::init(const char* data_path, const char* lang)
+
+
+	Ocr_str Ocr::operator()(tesseract::TessBaseAPI& api, cv::Mat& im)
 	{
-	/*	if (api.Init(data_path, lang)) {
-			return 1;
-		}
+		api.SetImage(im.data, im.cols, im.rows, im.elemSize(), im.step1());
+
+		return Ocr_str(api.GetUTF8Text());
+	}
+	int Ocr::prepare_api(tesseract::TessBaseAPI& api)
+	{
 		api.SetVariable("tessedit_char_whitelist", "0123456789");
 		api.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
-		api.SetVariable("debug_file", "/dev/null");*/
-
-		m_init = true;
+		api.SetVariable("debug_file", "/dev/null");
 		return 0;
-	}
-
-	Ocr_str Ocr::ocr(cv::Mat& im)
-	{
-		//api.SetImage(im.data, im.cols, im.rows, im.elemSize(), im.step1());
-
-		//return Ocr_str(api.GetUTF8Text());
-		return nullptr;
 	}
 }

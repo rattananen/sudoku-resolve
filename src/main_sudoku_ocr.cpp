@@ -4,6 +4,8 @@
 #include "sudoku/time.hpp"
 #include <iostream>
 #include <string>
+#include <tesseract/baseapi.h>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -66,21 +68,32 @@ int cmd(std::string_view file_str, const char * tessdata_path) {
 
 	jkk::ocr::Cell_view view{ h_lines , v_lines };
 
-	jkk::ocr::Ocr ocr;
-	if (!ocr.init(tessdata_path, "eng")) {
-		std::cerr << "can't initialize ocr program\n";
+	tesseract::TessBaseAPI api;
+
+	if (api.Init(tessdata_path, "eng")) {
+		std::cerr << "Could not initialize tesseract.\n";
 		return 1;
 	}
-	
+
+	jkk::ocr::Ocr ocr{};
+
+	ocr.prepare_api(api);
+
+
+	jkk::sudoku::Grid in_tb{};
 	size_t i = 0;
 	for (auto rect: view) {
 		cv::Mat cell = im_bin(rect);
-
-		auto str = ocr.ocr(cell);
-		std::cout << (i++) << "= " << str.get() << "\n";
+		auto str = ocr(api, cell);
+		in_tb[i++] =  std::atoi(str.get());
 	}
 
-	return 0;
+	api.End();
+
+	std::cout << "input\n";
+	jkk::sudoku::draw_table(std::cout, in_tb);
+	
+	return do_common(in_tb, std::cout, true);
 }
 
 
@@ -98,7 +111,7 @@ int main(int argc, char** argv) {
 #endif
 
 	if (argc == 2) {
-		return cmd(argv[0], nullptr);
+		return cmd(argv[1], nullptr);
 	}
 
 	std::cerr << "invalid arguments\n\n" << help_text;

@@ -3,9 +3,11 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
-//#include <tesseract/baseapi.h>
+#include <tesseract/baseapi.h>
 #include <memory>
 #include <vector>
+//#include <format>
+//#include <iostream>
 
 namespace jkk::ocr {
 	
@@ -45,7 +47,7 @@ namespace jkk::ocr {
 			}
 			bool operator==(std::default_sentinel_t)
 			{
-				return row >= row_end && col >= col_end;
+				return row >= row_end;
 			}
 
 			explicit iterator(Cell_view& view) :
@@ -82,15 +84,10 @@ namespace jkk::ocr {
 
 	using Ocr_str = std::shared_ptr<char[]>;
 	struct Ocr {
-		~Ocr();
+		
+		int prepare_api(tesseract::TessBaseAPI& api);
 
-		int init(const char* data_path, const char* lang);
-
-		Ocr_str ocr(cv::Mat& im);
-
-
-		bool m_init = false;
-		//tesseract::TessBaseAPI api;
+		Ocr_str operator()(tesseract::TessBaseAPI& api, cv::Mat& im);
 	};
 
 }

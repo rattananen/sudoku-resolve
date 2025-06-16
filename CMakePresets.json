@@ -41,7 +41,6 @@
     },
     {
       "name": "winx64vcpkg-debug",
-      "hidden": true,
       "displayName": "winx64vcpkg Debug",
       "inherits": "windows-base",
       "architecture": {
