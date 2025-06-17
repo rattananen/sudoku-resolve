@@ -35,7 +35,7 @@ sudoku_ocr test.png /path/to/tesseract-trained-models-folder
 ```
 - You can specific Tesseract trained models folder by this one.
 
-## Program building
+## Compiling
 
 For some resone `sudoku_ocr` can't compile to static (single file) yet. but you ccould build ocr version with Cmake commad.
 
